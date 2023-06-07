@@ -1,26 +1,100 @@
 <template>
-  <img alt="Vue logo" src="./assets/logo.png">
-  <HelloWorld msg="Welcome to Your Vue.js App"/>
+  <h1>Тренажер слепой печати</h1>
+  <Modal
+    v-if="isShowModal"
+    :exerciseNum="user.exerciseNum"
+    @startExercise="startExercise" />
+  <div v-if="string">
+    <p>{{ string }}</p>
+    <KeyField
+      :textTyping="textTyping"
+      @update:text-typing="updateTextTyping" />
+    <p>{{ seconds }}</p>
+    <p>{{ speed }} зн./мин</p>
+  </div>
 </template>
 
-<script>
-import HelloWorld from './components/HelloWorld.vue'
+<script setup>
+  import Modal from '@/components/Modal.vue';
+  import KeyField from '@/components/KeyField.vue';
 
-export default {
-  name: 'App',
-  components: {
-    HelloWorld
-  }
-}
+  import { onMounted, ref, computed, watch } from 'vue';
+
+  import { fetchText } from '@/api/text';
+
+  const user = ref({
+    bestTime: 0,
+  });
+
+  const seconds = ref(0);
+  const interval = ref(0);
+  const speed = ref(0);
+
+  const isShowModal = ref(true);
+
+  const toggleModal = () => {
+    isShowModal.value = !isShowModal.value;
+  };
+
+  const string = ref();
+  const textTyping = ref('');
+
+  const startExercise = async () => {
+    clearInterval(interval.value);
+    const text = await fetchText();
+    editString(text);
+    toggleModal();
+    interval.value = setInterval(updateSpeed, 1000);
+  };
+
+  const updateTime = () => {
+    seconds.value++;
+  };
+
+  const updateSpeed = () => {
+    updateTime();
+    calculationSpeed();
+  };
+
+  const updateTextTyping = newValue => {
+    textTyping.value = newValue;
+  };
+
+  const editString = text => {
+    if (text) string.value = text.slice(0, 50).toLowerCase();
+  };
+
+  const calculationSpeed = () => {
+    speed.value = Math.floor((textTyping.value.length / seconds.value) * 60);
+  };
+
+  watch(textTyping, (newValue, oldValue) => {
+    if (newValue !== oldValue) calculationSpeed();
+  });
+
+  onMounted(() => {
+    user.value = JSON.parse(localStorage.getItem('user')) ?? localStorage.setItem('user', JSON.stringify(user.value));
+  });
 </script>
 
 <style lang="scss">
-#app {
-  font-family: Avenir, Helvetica, Arial, sans-serif;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-  text-align: center;
-  color: #2c3e50;
-  margin-top: 60px;
-}
+  * {
+    padding: 0;
+    margin: 0;
+    box-sizing: border-box;
+  }
+
+  #app {
+    font-family: Avenir, Helvetica, Arial, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-align: left;
+    margin-top: 60px;
+    font-size: 18px;
+    overflow: hidden;
+    min-height: calc(var(--vh, 1vh) * 100);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
 </style>
