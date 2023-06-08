@@ -1,13 +1,23 @@
 <template>
   <div class="modal">
-    <p>Пальцы в основной позиции ASDF и JKL;</p>
-    <button @click="$emit('startExercise')">Начать</button>
+    <div v-if="isPrepareModal">
+      <p>Пальцы в основной позиции ASDF и JKL;</p>
+      <button @click="$emit('startExercise')">Начать</button>
+    </div>
+    <div v-if="isCapsLock">
+      <p>Пожалуйста, отключите Caps Lock.</p>
+    </div>
+    <div v-if="!isEnglish">
+      <p>Пожалуйста, смените раскладку на English.</p>
+    </div>
+    <!-- <div v-if="!isEnglish">
+      <p>Пожалуйста, смените раскладку на English.</p>
+    </div> -->
   </div>
 </template>
 
 <script setup>
-  const props = defineProps(['exerciseNum']);
-  // const emit = defineEmits(['startExercise']);
+  const props = defineProps(['exerciseNum', 'isPrepareModal', 'isCapsLock', 'isEnglish']);
 </script>
 
 <style lang="scss" scoped>

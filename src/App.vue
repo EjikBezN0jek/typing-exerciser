@@ -2,14 +2,17 @@
   <h1>Тренажер слепой печати</h1>
   <Modal
     v-if="isShowModal"
+    :isPrepareModal="isPrepareModal"
+    :isCapsLock="isCapsLock"
+    :isEnglish="isEnglish"
     :exerciseNum="user.exerciseNum"
     @startExercise="startExercise" />
   <div v-if="string">
     <p>{{ string }}</p>
     <KeyField
       :textTyping="textTyping"
-      @update:text-typing="updateTextTyping" />
-    <p>{{ seconds }}</p>
+      @update:text-typing="updateTextTyping"
+      @keyup="checkCapsLock($event), checkEnglish($event.target.value)" />
     <p>{{ speed }} зн./мин</p>
   </div>
 </template>
@@ -31,9 +34,33 @@
   const speed = ref(0);
 
   const isShowModal = ref(true);
+  const isPrepareModal = ref(true);
+  const isCapsLock = ref(false);
+  const isEnglish = ref(true);
 
   const toggleModal = () => {
     isShowModal.value = !isShowModal.value;
+  };
+
+  const checkCapsLock = e => {
+    if (e.getModifierState('CapsLock')) {
+      isCapsLock.value = true;
+      isShowModal.value = true;
+    } else {
+      isCapsLock.value = false;
+      isShowModal.value = false;
+    }
+  };
+
+  const checkEnglish = value => {
+    if (!value) return;
+    if (/^[a-zA-Z-!"#$%&'()*+,./:;<=>?@[\\\]_`{|}~ ]+$/.test(value)) {
+      isEnglish.value = true;
+      isShowModal.value = false;
+    } else {
+      isEnglish.value = false;
+      isShowModal.value = true;
+    }
   };
 
   const string = ref();
@@ -43,6 +70,7 @@
     clearInterval(interval.value);
     const text = await fetchText();
     editString(text);
+    isPrepareModal.value = false;
     toggleModal();
     interval.value = setInterval(updateSpeed, 1000);
   };
