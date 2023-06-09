@@ -1,27 +1,14 @@
 <template>
-  <div>
-    <input
-      ref="input"
-      type="textTyping"
-      :value="textTyping"
-      @input="$emit('update:textTyping', $event.target.value)" />
-  </div>
+  <div></div>
 </template>
 
 <script setup>
-  import { ref, onMounted } from 'vue';
-  defineProps(['textTyping']);
-  defineEmits(['update:textTyping']);
+  import { onMounted } from 'vue';
 
-  const input = ref(null);
-
-  const inputAutofocus = () => {
-    input.value.focus();
-  };
+  const emit = defineEmits(['keydown']);
 
   onMounted(() => {
-    document.body.addEventListener('click', inputAutofocus);
-    inputAutofocus();
+    document.addEventListener('keydown', e => emit('keydown', e));
   });
 </script>
 
