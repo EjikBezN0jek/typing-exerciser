@@ -1,6 +1,4 @@
 <template>
-  <h1>Тренажер слепой печати</h1>
-
   <Modal
     v-if="isShowModal"
     :isPrepareModal="isPrepareModal"
@@ -10,23 +8,38 @@
     :maxMistakesCount="maxMistakesCount"
     :mistakesCount="mistakesCount"
     :speed="speed"
+    :isNewHighscore="isNewHighscore"
     @startExercise="startExercise"
     @resetLanguage="resetLanguage" />
 
-  <h2>Личный рекорд: {{ user.bestTime }} зн.мин</h2>
-
   <div v-if="originalString">
-    <span>{{ correctString }}</span> |<span>{{ clippedString }}</span>
+    <h1 class="title">Тренажер слепой печати</h1>
+    <div>
+      <div class="stats">
+        <p>
+          <span>{{ mistakesCount }}</span> {{ setWordsEndings }}
+        </p>
+        <p>
+          <span>{{ speed }}</span> зн./мин
+        </p>
+      </div>
 
-    <KeyField @keydown="typingHandler" />
+      <button
+        class="btn--repeat"
+        @click="startExercise"></button>
 
-    <p>{{ speed }} зн./мин</p>
+      <p class="highscore">Личный рекорд: {{ user.bestTime }} зн./мин</p>
+    </div>
+
+    <KeyField
+      v-if="clippedString"
+      @keydown="typingHandler"
+      :correctString="correctString"
+      :clippedString="clippedString" />
 
     <p v-if="wrongSymbol">
       Wrong: <span style="color: red">{{ wrongSymbol }}</span>
     </p>
-
-    <p>Mistakes: {{ mistakesCount }}</p>
   </div>
 </template>
 
@@ -34,7 +47,7 @@
   import Modal from '@/components/Modal.vue';
   import KeyField from '@/components/KeyField.vue';
 
-  import { onMounted, ref, watch } from 'vue';
+  import { onMounted, ref, watch, computed } from 'vue';
 
   import { fetchText } from '@/api/text';
 
@@ -53,6 +66,21 @@
     isShowModal.value = !isShowModal.value;
     document.body.classList.toggle('lock');
   };
+
+  const setWordsEndings = computed(() => {
+    switch (mistakesCount.value) {
+      case 1: {
+        return 'ошибка';
+      }
+      case 2:
+      case 3:
+      case 4: {
+        return 'ошибки';
+      }
+      default:
+        return 'ошибок';
+    }
+  });
 
   const originalString = ref('');
   const clippedString = ref('');
@@ -73,7 +101,7 @@
   };
 
   const startExercise = async () => {
-    toggleModal();
+    isShowModal.value = false;
     clearInterval(interval.value);
     resetStats();
     const text = await fetchText();
@@ -82,13 +110,17 @@
     interval.value = setInterval(updateSpeed, 1000);
   };
 
+  const updateSpeed = () => {
+    updateTime();
+    calculationSpeed();
+  };
+
   const updateTime = () => {
     seconds.value++;
   };
 
-  const updateSpeed = () => {
-    updateTime();
-    calculationSpeed();
+  const calculationSpeed = () => {
+    speed.value = Math.floor((correctString.value.length / seconds.value) * 60);
   };
 
   const typingHandler = e => {
@@ -113,15 +145,14 @@
     }
   };
 
-  const calculationSpeed = () => {
-    speed.value = Math.floor((correctString.value.length / seconds.value) * 60);
-  };
+  const isNewHighscore = ref(false);
 
   const stringSuccess = () => {
     isSuccess.value = true;
     toggleModal();
     clearInterval(interval.value);
     if (speed.value > user.value.bestTime) {
+      isNewHighscore.value = true;
       user.value.bestTime = speed.value;
       localStorage.setItem('user', JSON.stringify(user.value));
     }
@@ -169,6 +200,9 @@
 </script>
 
 <style lang="scss">
+  @import 'assets/css/fonts.scss';
+  @import 'assets/css/variables.scss';
+
   * {
     padding: 0;
     margin: 0;
@@ -176,20 +210,70 @@
   }
 
   #app {
-    font-family: Avenir, Helvetica, Arial, sans-serif;
+    font-family: Helvetica, sans-serif;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
     text-align: left;
-    margin-top: 60px;
     font-size: 18px;
     overflow: hidden;
     min-height: calc(var(--vh, 1vh) * 100);
     display: flex;
     flex-direction: column;
     align-items: center;
+    color: white;
+    background-color: $primary-color;
+  }
+
+  .title {
+    text-align: center;
+    font-size: 50px;
+    color: black;
+    font-family: 'Truetypewriter';
   }
 
   .lock {
     overflow: hidden;
+  }
+
+  .btn--repeat {
+    position: relative;
+    width: 30px;
+    height: 30px;
+    background: none;
+    border: none;
+    cursor: pointer;
+
+    &::before {
+      content: '';
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 20px;
+      height: 20px;
+      background: url(../src/assets/icons/rotate-right-solid.svg) no-repeat;
+    }
+  }
+
+  .highscore {
+    position: relative;
+    margin-left: 30px;
+
+    &::before {
+      content: '';
+      position: absolute;
+      top: 50%;
+      left: -25px;
+      transform: translate(0, -50%);
+      width: 20px;
+      height: 20px;
+      background: url(../src/assets/icons/trophy-solid.svg) no-repeat;
+    }
+  }
+
+  .stats {
+    display: flex;
+    align-items: center;
+    gap: 100px;
   }
 </style>

@@ -6,7 +6,7 @@ const api = axios.create({
 
 export const fetchText = async () => {
   try {
-    const { data } = await api.get('', { params: { type: 'all-meat', sentences: 1 } });
+    const { data } = await api.get('', { params: { type: 'all-meat', sentences: 5 } });
     return data[0];
   } catch (e) {
     throw new Error(e);
