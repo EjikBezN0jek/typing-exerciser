@@ -43,10 +43,10 @@
       <h1 class="title">Тренажер слепой печати</h1>
       <div class="info">
         <div class="info__stats">
-          <p>
+          <p class="stats__item">
             <span>{{ mistakesCount }}</span> {{ declension(mistakesCount, dictionary) }}
           </p>
-          <p>
+          <p class="stats__item">
             <span>{{ speed }}</span> зн./мин
           </p>
         </div>
@@ -90,8 +90,8 @@
   const isStartModal = ref(false);
 
   const startExercise = async () => {
-    clearInterval(interval.value);
     resetStats();
+    clearInterval(interval.value);
     const text = await fetchText();
     editString(text);
     isStartModal.value = false;
@@ -107,11 +107,14 @@
 
   const mistakesCount = ref(0);
   const maxMistakesCount = ref(3);
+  const correctSymbol = ref('');
   const wrongSymbol = ref('');
   const correctString = ref('');
   const clippedString = ref('');
   const isFail = ref(false);
   const isSuccess = ref(false);
+  const seconds = ref(0);
+  const speed = ref(0);
 
   const resetStats = () => {
     seconds.value = 0;
@@ -129,16 +132,12 @@
     calculationSpeed();
   };
 
-  const seconds = ref(0);
-
   const updateTime = () => {
     seconds.value++;
   };
 
-  const speed = ref(0);
-
   const calculationSpeed = () => {
-    speed.value = Math.floor((correctString.value?.length ?? 0 / seconds.value) * 60);
+    if (correctString.value.length) speed.value = Math.floor((correctString.value.length / seconds.value) * 60);
   };
 
   const isModalOpen = computed(() => isStartModal.value || isNotEnglish.value || isFail.value || isSuccess.value);
@@ -147,35 +146,33 @@
     if (isModalOpen.value) return;
     if (e.code === 'Space') e.preventDefault();
     checkEnglish(e.key);
-    if (!isNotEnglish.value) {
-      checkCorrectSymbol(e);
-    } else {
-      clearInterval(interval.value);
-    }
+    !isNotEnglish.value ? checkCorrectSymbol(e.key) : clearInterval(interval.value);
   };
 
-  const correctSymbol = ref('');
+  const correctSymbolTimerId = ref(0);
+  const wrongSymbolTimerId = ref(0);
 
-  const checkCorrectSymbol = e => {
+  const checkCorrectSymbol = key => {
+    clearTimeout(correctSymbolTimerId.value);
+    clearTimeout(wrongSymbolTimerId.value);
     correctSymbol.value = '';
     wrongSymbol.value = '';
-    const formattedSymbol = e.key.toLowerCase();
+    const formattedSymbol = key.toLowerCase();
     if (formattedSymbol === originalString.value[correctString.value.length]) {
-      correctSymbol.value = e.code;
+      correctSymbol.value = key;
+      correctSymbolTimerId.value = setTimeout(() => (correctSymbol.value = ''), 500);
       correctString.value = correctString.value.concat(formattedSymbol);
       clippedString.value = clippedString.value.substring(1);
-      wrongSymbol.value = '';
     } else {
-      wrongSymbol.value = e.code;
+      wrongSymbol.value = key;
+      wrongSymbolTimerId.value = setTimeout(() => (wrongSymbol.value = ''), 500);
       mistakesCount.value++;
     }
   };
 
   watch(correctString, newValue => {
-    calculationSpeed();
-    if (newValue.length === originalString.value.length) {
-      stringFinish();
-    }
+    // if (newValue !== oldValue) calculationSpeed();
+    if (newValue.length === originalString.value.length) stringFinish();
   });
 
   watch(mistakesCount, newValue => {
@@ -231,7 +228,6 @@
 </script>
 
 <style lang="scss">
-  @import 'assets/css/fonts.scss';
   @import 'assets/css/variables.scss';
 
   * {
@@ -279,7 +275,6 @@
     text-align: center;
     font-size: 50px;
     color: black;
-    font-family: 'Truetypewriter';
   }
 
   .lock {
@@ -320,6 +315,10 @@
       height: 20px;
       background: url(../src/assets/icons/trophy-solid.svg) no-repeat;
     }
+  }
+
+  .stats__item {
+    flex-shrink: 0;
   }
 
   .info {

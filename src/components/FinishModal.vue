@@ -35,7 +35,6 @@
 <style lang="scss" scoped>
   @import '../assets/css/variables.scss';
   .text--big {
-    font-family: 'Truetypewriter';
     font-size: 48px;
     font-weight: bold;
   }
@@ -47,7 +46,7 @@
     gap: 50px;
     padding: 20px;
     width: 100%;
-    background-color: $third-color;
+    background-color: $success-color;
   }
 
   .stats__item {
@@ -60,7 +59,7 @@
   }
 
   .highscore {
-    color: $secondary-color;
+    color: $accent-color;
     text-transform: none;
   }
 </style>

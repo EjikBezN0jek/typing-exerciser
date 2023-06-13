@@ -92,7 +92,6 @@
 
   .modal__title {
     font-size: 36px;
-    font-family: 'Truetypewriter';
   }
 
   .modal__text {

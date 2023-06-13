@@ -31,11 +31,16 @@
   }
 
   .text {
-    font-family: 'Truetypewriter';
-    font-size: 28px;
+    font-size: 24px;
+  }
+
+  @media screen and (min-width: 1024px) {
+    .text {
+      font-size: 28px;
+    }
   }
   .text__writting {
-    color: $third-color;
+    color: $success-color;
   }
 
   .text__remaining {
