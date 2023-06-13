@@ -52,7 +52,7 @@
         </div>
 
         <button
-          class="btn--repeat"
+          class="restart"
           @click="startExercise"></button>
 
         <p class="stats__highscore">Личный рекорд: {{ highscore }} зн./мин</p>
@@ -67,9 +67,7 @@
         :wrongSymbol="wrongSymbol"
         :correctSymbol="correctSymbol"></Keyboard>
     </div>
-    <div
-      v-else
-      class="loader" />
+    <Loader v-else />
   </Transition>
 </template>
 
@@ -78,6 +76,7 @@
   import FinishModal from '@/components/FinishModal.vue';
   import Keyfield from '@/components/Keyfield.vue';
   import Keyboard from '@/components/Keyboard.vue';
+  import Loader from '@/components/Loader.vue';
 
   import { onMounted, ref, watch, computed } from 'vue';
 
@@ -99,6 +98,8 @@
   };
 
   const originalString = ref('');
+  const correctString = ref('');
+  const clippedString = ref('');
 
   const editString = text => {
     if (text) originalString.value = text.slice(0, 50).trim().toLowerCase();
@@ -107,12 +108,13 @@
 
   const mistakesCount = ref(0);
   const maxMistakesCount = ref(3);
+
   const correctSymbol = ref('');
   const wrongSymbol = ref('');
-  const correctString = ref('');
-  const clippedString = ref('');
+
   const isFail = ref(false);
   const isSuccess = ref(false);
+
   const seconds = ref(0);
   const speed = ref(0);
 
@@ -171,7 +173,6 @@
   };
 
   watch(correctString, newValue => {
-    // if (newValue !== oldValue) calculationSpeed();
     if (newValue.length === originalString.value.length) stringFinish();
   });
 
@@ -237,18 +238,18 @@
   }
 
   #app {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    min-height: calc(var(--vh, 1vh) * 100);
     font-family: Helvetica, sans-serif;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
     text-align: left;
     font-size: 18px;
-    overflow: hidden;
-    min-height: calc(var(--vh, 1vh) * 100);
-    display: flex;
-    flex-direction: column;
-    align-items: center;
     color: white;
     background-color: $primary-color;
+    overflow: hidden;
   }
 
   .fade-enter-active {
@@ -281,7 +282,7 @@
     overflow: hidden;
   }
 
-  .btn--repeat {
+  .restart {
     position: relative;
     width: 30px;
     height: 30px;
@@ -301,26 +302,6 @@
     }
   }
 
-  .stats__highscore {
-    position: relative;
-    margin-left: 30px;
-
-    &::before {
-      content: '';
-      position: absolute;
-      top: 50%;
-      left: -25px;
-      transform: translate(0, -50%);
-      width: 20px;
-      height: 20px;
-      background: url(../src/assets/icons/trophy-solid.svg) no-repeat;
-    }
-  }
-
-  .stats__item {
-    flex-shrink: 0;
-  }
-
   .info {
     display: flex;
     align-items: center;
@@ -334,27 +315,23 @@
     width: 20%;
   }
 
-  .loader {
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    width: 30px;
-    height: 30px;
-    border: 5px solid #fff;
-    border-bottom-color: transparent;
-    border-radius: 50%;
-    display: inline-block;
-    box-sizing: border-box;
-    animation: rotation 1s linear infinite;
+  .stats__item {
+    flex-shrink: 0;
   }
 
-  @keyframes rotation {
-    0% {
-      transform: rotate(0deg);
-    }
-    100% {
-      transform: rotate(360deg);
+  .stats__highscore {
+    position: relative;
+    margin-left: 30px;
+
+    &::before {
+      content: '';
+      position: absolute;
+      top: 50%;
+      left: -25px;
+      transform: translate(0, -50%);
+      width: 20px;
+      height: 20px;
+      background: url(../src/assets/icons/trophy-solid.svg) no-repeat;
     }
   }
 </style>

@@ -47,8 +47,8 @@
     color: black;
     &::before {
       content: '|';
-      width: 7px;
       display: inline-block;
+      width: 7px;
       animation: fadeIn 0.5s ease-in infinite alternate;
     }
   }

@@ -6,11 +6,11 @@
     <template #default>
       <div class="modal__stats">
         <div class="stats__item">
-          <p class="text--big">{{ props.mistakesCount }}</p>
+          <p class="item__title">{{ props.mistakesCount }}</p>
           <p>{{ declension(props.mistakesCount, props.dictionary) }}</p>
         </div>
         <div class="stats__item">
-          <p class="text--big">{{ props.speed }}</p>
+          <p class="item__title">{{ props.speed }}</p>
           <span>зн./мин</span>
           <p
             v-if="props.isNewHighscore"
@@ -34,10 +34,6 @@
 
 <style lang="scss" scoped>
   @import '../assets/css/variables.scss';
-  .text--big {
-    font-size: 48px;
-    font-weight: bold;
-  }
 
   .modal__stats {
     display: flex;
@@ -56,6 +52,11 @@
     align-items: center;
     color: white;
     text-transform: uppercase;
+  }
+
+  .item__title {
+    font-size: 48px;
+    font-weight: bold;
   }
 
   .highscore {

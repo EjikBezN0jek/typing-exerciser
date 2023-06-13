@@ -77,10 +77,10 @@
     align-items: center;
     justify-content: space-around;
     gap: 10px;
-    background-color: white;
     width: 800px;
     padding: 10px 10px 30px;
     border-radius: 10px;
+    background-color: white;
 
     &::after {
       position: absolute;
@@ -101,9 +101,9 @@
   .keyboard__btn {
     width: 47px;
     height: 47px;
+    font-size: 12px;
     border-radius: 5px;
     border: none;
-    font-size: 12px;
   }
 
   @media screen and (min-width: 1024px) {
@@ -113,8 +113,8 @@
   }
 
   .correct {
-    background: $success-color !important;
     color: white;
+    background: $success-color !important;
   }
 
   .wrong {
