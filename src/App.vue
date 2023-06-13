@@ -1,97 +1,121 @@
 <template>
-  <Modal
-    v-if="isShowModal"
-    :isPrepareModal="isPrepareModal"
-    :isEnglish="isEnglish"
-    :isFail="isFail"
-    :isSuccess="isSuccess"
-    :maxMistakesCount="maxMistakesCount"
+  <BaseModal
+    v-if="isMobile"
+    title="Упс!"
+    text="Пожалуйста, используйте экран побольше"
+    confirm-button-text="Ок" />
+
+  <BaseModal
+    v-if="isStartModal && !isMobile"
+    @close="isStartModal = false"
+    @confirm="startExercise"
+    title="Тренажер слепой печати"
+    text="Пальцы в основной позиции ASDF и JKL;"
+    confirm-button-text="Начать" />
+
+  <BaseModal
+    v-if="isFail"
+    @close="isFail = false"
+    @confirm="startExercise"
+    title="Упс!"
+    :text="`Не более ${maxMistakesCount} ошибок. Попробуйте еще раз`"
+    confirm-button-text="Повторить" />
+
+  <BaseModal
+    v-if="isNotEnglish"
+    @close="isNotEnglish = false"
+    text="Пожалуйста, смените раскладку на English"
+    confirm-button-text="Ок" />
+
+  <FinishModal
+    v-if="isSuccess"
+    @close="isSuccess = false"
+    @startExercise="startExercise"
+    :dictionary="dictionary"
     :mistakesCount="mistakesCount"
     :speed="speed"
-    :isNewHighscore="isNewHighscore"
-    @startExercise="startExercise"
-    @resetLanguage="resetLanguage" />
+    :isNewHighscore="isNewHighscore" />
 
-  <div v-if="originalString">
-    <h1 class="title">Тренажер слепой печати</h1>
-    <div>
-      <div class="stats">
-        <p>
-          <span>{{ mistakesCount }}</span> {{ setWordsEndings }}
-        </p>
-        <p>
-          <span>{{ speed }}</span> зн./мин
-        </p>
+  <Transition name="fade">
+    <div
+      v-if="clippedString && !isMobile"
+      class="container">
+      <h1 class="title">Тренажер слепой печати</h1>
+      <div class="info">
+        <div class="info__stats">
+          <p>
+            <span>{{ mistakesCount }}</span> {{ declension(mistakesCount, dictionary) }}
+          </p>
+          <p>
+            <span>{{ speed }}</span> зн./мин
+          </p>
+        </div>
+
+        <button
+          class="btn--repeat"
+          @click="startExercise"></button>
+
+        <p class="stats__highscore">Личный рекорд: {{ highscore }} зн./мин</p>
       </div>
 
-      <button
-        class="btn--repeat"
-        @click="startExercise"></button>
+      <Keyfield
+        @keydown="typingHandler"
+        :correctString="correctString"
+        :clippedString="clippedString" />
 
-      <p class="highscore">Личный рекорд: {{ user.bestTime }} зн./мин</p>
+      <Keyboard
+        :wrongSymbol="wrongSymbol"
+        :correctSymbol="correctSymbol"></Keyboard>
     </div>
-
-    <KeyField
-      v-if="clippedString"
-      @keydown="typingHandler"
-      :correctString="correctString"
-      :clippedString="clippedString" />
-
-    <p v-if="wrongSymbol">
-      Wrong: <span style="color: red">{{ wrongSymbol }}</span>
-    </p>
-  </div>
+    <div
+      v-else
+      class="loader" />
+  </Transition>
 </template>
 
 <script setup>
-  import Modal from '@/components/Modal.vue';
-  import KeyField from '@/components/KeyField.vue';
+  import BaseModal from '@/components/BaseModal.vue';
+  import FinishModal from '@/components/FinishModal.vue';
+  import Keyfield from '@/components/Keyfield.vue';
+  import Keyboard from '@/components/Keyboard.vue';
 
   import { onMounted, ref, watch, computed } from 'vue';
 
   import { fetchText } from '@/api/text';
+  import { declension } from '@/helpers/declension';
 
-  const user = ref({
-    bestTime: 0,
-  });
+  const dictionary = ['ошибка', 'ошибки', 'ошибок'];
 
-  const seconds = ref(0);
   const interval = ref(0);
-  const speed = ref(0);
-  const isShowModal = ref(false);
-  const isPrepareModal = ref(false);
-  const isEnglish = ref(true);
+  const isStartModal = ref(false);
 
-  const toggleModal = () => {
-    isShowModal.value = !isShowModal.value;
-    document.body.classList.toggle('lock');
+  const startExercise = async () => {
+    clearInterval(interval.value);
+    resetStats();
+    const text = await fetchText();
+    editString(text);
+    isStartModal.value = false;
+    interval.value = setInterval(updateSpeed, 1000);
   };
 
-  const setWordsEndings = computed(() => {
-    switch (mistakesCount.value) {
-      case 1: {
-        return 'ошибка';
-      }
-      case 2:
-      case 3:
-      case 4: {
-        return 'ошибки';
-      }
-      default:
-        return 'ошибок';
-    }
-  });
-
   const originalString = ref('');
-  const clippedString = ref('');
-  const correctString = ref('');
-  const wrongSymbol = ref('');
+
+  const editString = text => {
+    if (text) originalString.value = text.slice(0, 50).trim().toLowerCase();
+    clippedString.value = originalString.value;
+  };
+
   const mistakesCount = ref(0);
   const maxMistakesCount = ref(3);
+  const wrongSymbol = ref('');
+  const correctString = ref('');
+  const clippedString = ref('');
   const isFail = ref(false);
   const isSuccess = ref(false);
 
   const resetStats = () => {
+    seconds.value = 0;
+    speed.value = 0;
     mistakesCount.value = 0;
     wrongSymbol.value = '';
     correctString.value = '';
@@ -100,42 +124,44 @@
     isSuccess.value = false;
   };
 
-  const startExercise = async () => {
-    isShowModal.value = false;
-    clearInterval(interval.value);
-    resetStats();
-    const text = await fetchText();
-    editString(text);
-    isPrepareModal.value = false;
-    interval.value = setInterval(updateSpeed, 1000);
-  };
-
   const updateSpeed = () => {
     updateTime();
     calculationSpeed();
   };
 
+  const seconds = ref(0);
+
   const updateTime = () => {
     seconds.value++;
   };
 
+  const speed = ref(0);
+
   const calculationSpeed = () => {
-    speed.value = Math.floor((correctString.value.length / seconds.value) * 60);
+    speed.value = Math.floor((correctString.value?.length ?? 0 / seconds.value) * 60);
   };
 
+  const isModalOpen = computed(() => isStartModal.value || isNotEnglish.value || isFail.value || isSuccess.value);
+
   const typingHandler = e => {
+    if (isModalOpen.value) return;
     if (e.code === 'Space') e.preventDefault();
     checkEnglish(e.key);
-    if (!isShowModal.value) {
+    if (!isNotEnglish.value) {
       checkCorrectSymbol(e);
     } else {
       clearInterval(interval.value);
     }
   };
 
+  const correctSymbol = ref('');
+
   const checkCorrectSymbol = e => {
+    correctSymbol.value = '';
+    wrongSymbol.value = '';
     const formattedSymbol = e.key.toLowerCase();
     if (formattedSymbol === originalString.value[correctString.value.length]) {
+      correctSymbol.value = e.code;
       correctString.value = correctString.value.concat(formattedSymbol);
       clippedString.value = clippedString.value.substring(1);
       wrongSymbol.value = '';
@@ -145,57 +171,62 @@
     }
   };
 
-  const isNewHighscore = ref(false);
-
-  const stringSuccess = () => {
-    isSuccess.value = true;
-    toggleModal();
-    clearInterval(interval.value);
-    if (speed.value > user.value.bestTime) {
-      isNewHighscore.value = true;
-      user.value.bestTime = speed.value;
-      localStorage.setItem('user', JSON.stringify(user.value));
-    }
-  };
-
   watch(correctString, newValue => {
     calculationSpeed();
     if (newValue.length === originalString.value.length) {
-      stringSuccess();
+      stringFinish();
     }
   });
 
   watch(mistakesCount, newValue => {
     if (newValue > maxMistakesCount.value) {
       isFail.value = true;
-      toggleModal();
       clearInterval(interval.value);
     }
   });
 
+  const isNewHighscore = ref(false);
+
+  const stringFinish = () => {
+    isSuccess.value = true;
+    clearInterval(interval.value);
+    if (speed.value > highscore.value) {
+      isNewHighscore.value = true;
+      highscore.value = speed.value;
+      saveNewHighscore();
+    }
+  };
+
+  const saveNewHighscore = () => {
+    localStorage.setItem('highscore', JSON.stringify(highscore.value));
+  };
+
+  const isNotEnglish = ref(false);
+
   const checkEnglish = key => {
-    if (!key || /^[-!"#$%&'()*+,./:;<=>?@[\\\]_`{|}~ ]+$/.test(key)) return;
-    /^[a-zA-Z]+$/.test(key) ? (isEnglish.value = true) : (isEnglish.value = false);
+    isNotEnglish.value = !/^[a-zA-Z,.:;'"-\\\[\]=`\d\s]+$/.test(key);
   };
 
-  watch(isEnglish, newValue => {
-    if (newValue === false) toggleModal();
-  });
+  const highscore = ref(0);
 
-  const resetLanguage = () => {
-    isEnglish.value = true;
-    toggleModal();
+  const extractHighscore = () => {
+    return (
+      JSON.parse(localStorage.getItem('highscore')) ??
+      localStorage.setItem('highscore', JSON.stringify(highscore.value))
+    );
   };
 
-  const editString = text => {
-    if (text) originalString.value = text.slice(0, 50).trim().toLowerCase();
-    clippedString.value = originalString.value;
+  const isMobile = ref(false);
+
+  const mobileDetected = () => {
+    isMobile.value = window.innerWidth < 768;
   };
 
   onMounted(() => {
-    user.value = JSON.parse(localStorage.getItem('user')) ?? localStorage.setItem('user', JSON.stringify(user.value));
-    toggleModal();
-    isPrepareModal.value = true;
+    mobileDetected();
+    if (!isMobile.value) isStartModal.value = true;
+    window.onresize = mobileDetected;
+    highscore.value = extractHighscore();
   });
 </script>
 
@@ -224,7 +255,27 @@
     background-color: $primary-color;
   }
 
+  .fade-enter-active {
+    transition: opacity 0.3s;
+  }
+
+  .fade-enter-from,
+  .fade-leave-to {
+    opacity: 0;
+  }
+
+  .container {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    width: 100%;
+    max-width: 1440px;
+    padding: 30px 20px;
+    margin: 0 auto;
+  }
+
   .title {
+    font-weight: 400;
     text-align: center;
     font-size: 50px;
     color: black;
@@ -255,7 +306,7 @@
     }
   }
 
-  .highscore {
+  .stats__highscore {
     position: relative;
     margin-left: 30px;
 
@@ -271,9 +322,40 @@
     }
   }
 
-  .stats {
+  .info {
     display: flex;
     align-items: center;
-    gap: 100px;
+    justify-content: space-between;
+  }
+
+  .info__stats {
+    display: flex;
+    align-items: center;
+    gap: 30px;
+    width: 20%;
+  }
+
+  .loader {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 30px;
+    height: 30px;
+    border: 5px solid #fff;
+    border-bottom-color: transparent;
+    border-radius: 50%;
+    display: inline-block;
+    box-sizing: border-box;
+    animation: rotation 1s linear infinite;
+  }
+
+  @keyframes rotation {
+    0% {
+      transform: rotate(0deg);
+    }
+    100% {
+      transform: rotate(360deg);
+    }
   }
 </style>
