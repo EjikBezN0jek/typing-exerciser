@@ -1,4 +1,4 @@
-# test-type
+# typing-exerciser
 
 ## Project setup
 ```
